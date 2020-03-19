@@ -3308,7 +3308,7 @@ class OutputPage extends ContextSource {
 			// Only occupy precious space in the <head> when it is non-null (T53640)
 			// mw.config.get returns null by default.
 			if ( $userNewMsgRevId ) {
-				$vars['wgUserNewMsgRevisionId'] = $$userNewMsgRevId;
+				$vars['wgUserNewMsgRevisionId'] = $userNewMsgRevId;
 			}
 		}
 		$contLang = $services->getContentLanguage();
