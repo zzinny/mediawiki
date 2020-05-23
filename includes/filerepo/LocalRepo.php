@@ -197,9 +197,9 @@ class LocalRepo extends FileRepo {
 	function checkRedirect( Title $title ) {
 		$title = File::normalizeTitle( $title, 'exception' );
 
-		$memcKey = $this->getSharedCacheKey( 'image_redirect', md5( $title->getDBkey() ) );
+		$memcKey = $this->getSharedCacheKey( 'file_redirect', md5( $title->getDBkey() ) );
 		if ( $memcKey === false ) {
-			$memcKey = $this->getLocalCacheKey( 'image_redirect', md5( $title->getDBkey() ) );
+			$memcKey = $this->getLocalCacheKey( 'file_redirect', md5( $title->getDBkey() ) );
 			$expiry = 300; // no invalidation, 5 minutes
 		} else {
 			$expiry = 86400; // has invalidation, 1 day
@@ -496,8 +496,11 @@ class LocalRepo extends FileRepo {
 	 * @param mixed ...$args
 	 * @return string
 	 */
-	function getSharedCacheKey( ...$args ) {
-		return $this->wanCache->makeKey( ...$args );
+	public function getSharedCacheKey( ...$args ) {
+		return $this->wanCache->makeGlobalKey(
+			WikiMap::getCurrentWikiDbDomain()->getId(),
+			...$args
+		);
 	}
 
 	/**
@@ -506,8 +509,8 @@ class LocalRepo extends FileRepo {
 	 * @param Title $title Title of page
 	 * @return void
 	 */
-	function invalidateImageRedirect( Title $title ) {
-		$key = $this->getSharedCacheKey( 'image_redirect', md5( $title->getDBkey() ) );
+	public function invalidateImageRedirect( Title $title ) {
+		$key = $this->getSharedCacheKey( 'file_redirect', md5( $title->getDBkey() ) );
 		if ( $key ) {
 			$this->getMasterDB()->onTransactionPreCommitOrIdle(
 				function () use ( $key ) {
