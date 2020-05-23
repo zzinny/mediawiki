@@ -54,7 +54,7 @@ use Wikimedia\Rdbms\IResultWrapper;
  * @ingroup FileAbstraction
  */
 class LocalFile extends File {
-	const VERSION = 11; // cache version
+	private const VERSION = 12; // cache version
 
 	const CACHE_FIELD_MAX_LEN = 1000;
 
