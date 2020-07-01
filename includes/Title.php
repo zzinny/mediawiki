@@ -1879,64 +1879,6 @@ class Title implements LinkTarget, IDBAccessObject {
 	}
 
 	/**
-	 * Finds the first or last subpage divider (slash) in the string.
-	 * Any leading sequence of slashes is ignored, since it does not divide
-	 * two parts of the string. Considering leading slashes dividers would
-	 * result in empty root title or base title (T229443).
-	 *
-	 * Note that trailing slashes are considered dividers, and empty subpage
-	 * names are allowed.
-	 *
-	 * @param string $text
-	 * @param int $dir -1 for the last or +1 for the first divider.
-	 *
-	 * @return false|int
-	 */
-	private function findSubpageDivider( $text, $dir ) {
-		$top = strlen( $text ) - 1;
-		$bottom = 0;
-
-		while ( $bottom < $top && $text[$bottom] === '/' ) {
-			$bottom++;
-		}
-
-		if ( $top < $bottom ) {
-			return false;
-		}
-
-		if ( $dir > 0 ) {
-			$idx = $bottom;
-			while ( $idx <= $top && $text[$idx] !== '/' ) {
-				$idx++;
-			}
-		} else {
-			$idx = $top;
-			while ( $idx > $bottom && $text[$idx] !== '/' ) {
-				$idx--;
-			}
-		}
-
-		if ( $idx < $bottom || $idx > $top ) {
-			return false;
-		}
-
-		if ( $idx < 1 ) {
-			return false;
-		}
-
-		return $idx;
-	}
-
-	/**
-	 * Whether this Title's namespace has subpages enabled.
-	 * @return bool
-	 */
-	private function hasSubpagesEnabled() {
-		return MediaWikiServices::getInstance()->getNamespaceInfo()->
-			hasSubpages( $this->mNamespace );
-	}
-
-	/**
 	 * Get the root page name text without a namespace, i.e. the leftmost part before any slashes
 	 *
 	 * @note the return value may contain trailing whitespace and is thus
@@ -1952,18 +1894,15 @@ class Title implements LinkTarget, IDBAccessObject {
 	 * @since 1.20
 	 */
 	public function getRootText() {
-		$text = $this->getText();
-		if ( !$this->hasSubpagesEnabled() ) {
-			return $text;
+		if (
+			!MediaWikiServices::getInstance()->getNamespaceInfo()->
+				hasSubpages( $this->mNamespace )
+			|| strtok( $this->getText(), '/' ) === false
+		) {
+			return $this->getText();
 		}
 
-		$firstSlashPos = $this->findSubpageDivider( $text, +1 );
-		// Don't discard the real title if there's no subpage involved
-		if ( $firstSlashPos === false ) {
-			return $text;
-		}
-
-		return substr( $text, 0, $firstSlashPos );
+		return strtok( $this->getText(), '/' );
 	}
 
 	/**
@@ -2003,11 +1942,14 @@ class Title implements LinkTarget, IDBAccessObject {
 	 */
 	public function getBaseText() {
 		$text = $this->getText();
-		if ( !$this->hasSubpagesEnabled() ) {
+		if (
+			!MediaWikiServices::getInstance()->getNamespaceInfo()->
+				hasSubpages( $this->mNamespace )
+		) {
 			return $text;
 		}
 
-		$lastSlashPos = $this->findSubpageDivider( $text, -1 );
+		$lastSlashPos = strrpos( $text, '/' );
 		// Don't discard the real title if there's no subpage involved
 		if ( $lastSlashPos === false ) {
 			return $text;
@@ -2049,16 +1991,14 @@ class Title implements LinkTarget, IDBAccessObject {
 	 * @return string Subpage name
 	 */
 	public function getSubpageText() {
-		$text = $this->getText();
-		if ( !$this->hasSubpagesEnabled() ) {
-			return $text;
+		if (
+			!MediaWikiServices::getInstance()->getNamespaceInfo()->
+				hasSubpages( $this->mNamespace )
+		) {
+			return $this->mTextform;
 		}
-
-		$lastSlashPos = $this->findSubpageDivider( $text, -1 );
-		if ( $lastSlashPos === false ) {
-			return '';
-		}
-		return substr( $text, $lastSlashPos + 1 );
+		$parts = explode( '/', $this->mTextform );
+		return $parts[count( $parts ) - 1];
 	}
 
 	/**
